@@ -33,20 +33,20 @@ export const useAIStore = defineStore('ai', () => {
     loaded.value = true
   }
 
-  async function save() {
-    await db.settings.put({
-      key: CONFIG_KEY,
-      value: {
-        providerId: providerId.value,
-        apiKey: apiKey.value,
-        baseUrl: baseUrl.value,
-        model: model.value,
-        temperature: temperature.value,
-        availableModels: availableModels.value
-      }
-    })
+    async function save() {
+    // 转成纯对象，剥离 Vue 的响应式 Proxy
+    const plain = JSON.parse(JSON.stringify({
+      providerId: providerId.value,
+      apiKey: apiKey.value,
+      baseUrl: baseUrl.value,
+      model: model.value,
+      temperature: temperature.value,
+      availableModels: availableModels.value
+    }))
+    await db.settings.put({ key: CONFIG_KEY, value: plain })
     logger.info('AI config saved', { providerId: providerId.value, model: model.value })
   }
+
 
   function getConfig() {
     return {
