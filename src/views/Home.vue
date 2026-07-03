@@ -1,9 +1,10 @@
 <template>
   <div class="home">
     <header class="topbar">
+      <button class="icon-btn" @click="sidebarOpen = true" title="对话列表">☰</button>
       <div class="brand">nowhere</div>
       <div class="actions">
-        <button class="icon-btn" @click="onClear" title="清空当前对话">✎</button>
+        <button class="icon-btn" @click="onNewChat" title="新对话">+</button>
         <router-link to="/settings" class="icon-btn">⚙</router-link>
       </div>
     </header>
@@ -54,6 +55,13 @@
         aria-label="发送"
       >→</button>
     </footer>
+
+    <ChatSidebar
+      :open="sidebarOpen"
+      @close="sidebarOpen = false"
+      @select="onSelectConv"
+      @new="onNewChat"
+    />
   </div>
 </template>
 
@@ -61,14 +69,18 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { useAIStore } from '../stores/ai'
+import { useConversationsStore } from '../stores/conversations'
+import ChatSidebar from '../components/ChatSidebar.vue'
 
 const chat = useChatStore()
 const ai = useAIStore()
+const convStore = useConversationsStore()
 
 const input = ref('')
 const error = ref('')
 const stageRef = ref(null)
 const textareaRef = ref(null)
+const sidebarOpen = ref(false)
 
 const kaomoji = ref('(˶ˆᗜˆ˵)')
 
@@ -85,6 +97,7 @@ const greeting = computed(() => {
 
 onMounted(async () => {
   await ai.load()
+  await convStore.loadCurrentId()
   await chat.loadMessages()
   scrollToBottom()
 })
@@ -129,11 +142,15 @@ async function onSend() {
   }
 }
 
-async function onClear() {
-  if (chat.messages.length === 0) return
-  if (confirm('清空当前对话的所有消息？')) {
-    await chat.clearMessages()
-  }
+async function onSelectConv(id) {
+  await chat.switchTo(id)
+  scrollToBottom()
+}
+
+async function onNewChat() {
+  if (chat.isStreaming) return
+  await chat.newConversation()
+  error.value = ''
 }
 </script>
 

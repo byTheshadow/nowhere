@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { db, uid, now } from '../db/schema'
+import { toPlain } from '../db/utils'
 import { logger } from '../services/logger'
 import { useAIStore } from './ai'
-
-const CURRENT_CONV_KEY = 'currentConversationId'
+import { useConversationsStore } from './conversations'
 
 const DEFAULT_SYSTEM = `你是 Nowhere，一个温柔的情绪陪伴助手，风格像 Baymax。
 - 回应尽量简短、温暖、共情，不要说教。
@@ -19,29 +19,35 @@ export const useChatStore = defineStore('chat', () => {
   const streamingContent = ref('')
 
   async function ensureConversation() {
-    if (currentConversationId.value) return currentConversationId.value
+    const convStore = useConversationsStore()
+    if (!convStore.currentId) await convStore.loadCurrentId()
 
-    const row = await db.settings.get(CURRENT_CONV_KEY)
-    if (row?.value) {
-      const exists = await db.conversations.get(row.value)
+    if (convStore.currentId) {
+      const exists = await db.conversations.get(convStore.currentId)
       if (exists) {
-        currentConversationId.value = row.value
-        return row.value
+        currentConversationId.value = convStore.currentId
+        return convStore.currentId
       }
     }
 
-    const id = uid('conv')
-    await db.conversations.add({
-      id,
-      title: '新对话',
-      createdAt: now(),
-      updatedAt: now(),
-      personaId: null,
-      isPinned: false,
-      tags: []
-    })
-    await db.settings.put({ key: CURRENT_CONV_KEY, value: id })
+    // 没有当前对话，新建一个
+    const id = await convStore.create()
     currentConversationId.value = id
+    return id
+  }
+
+  async function switchTo(id) {
+    const convStore = useConversationsStore()
+    await convStore.setCurrent(id)
+    currentConversationId.value = id
+    await loadMessages()
+  }
+
+  async function newConversation() {
+    const convStore = useConversationsStore()
+    const id = await convStore.create()
+    currentConversationId.value = id
+    messages.value = []
     return id
   }
 
@@ -57,6 +63,7 @@ export const useChatStore = defineStore('chat', () => {
     if (!trimmed) return
 
     const ai = useAIStore()
+    const convStore = useConversationsStore()
     if (!ai.isConfigured) {
       throw new Error('请先在 设置 → AI 配置 里配置 API Key 和模型')
     }
@@ -71,8 +78,14 @@ export const useChatStore = defineStore('chat', () => {
       timestamp: now(),
       mode: 'normal'
     }
-    await db.messages.add(userMsg)
+    await db.messages.add(toPlain(userMsg))
     messages.value.push(userMsg)
+
+    // 第一条用户消息即用作对话标题（截断）
+    const isFirstUser = messages.value.filter((m) => m.role === 'user').length === 1
+    if (isFirstUser) {
+      await convStore.updateTitleIfNew(convId, trimmed)
+    }
 
     const payload = [
       { role: 'system', content: DEFAULT_SYSTEM },
@@ -100,9 +113,10 @@ export const useChatStore = defineStore('chat', () => {
         timestamp: now(),
         mode: 'normal'
       }
-      await db.messages.add(assistantMsg)
+      await db.messages.add(toPlain(assistantMsg))
       messages.value.push(assistantMsg)
       await db.conversations.update(convId, { updatedAt: now() })
+      await convStore.loadAll()
     } catch (e) {
       logger.error('Chat failed', { message: e.message, stack: e.stack })
       throw e
@@ -122,6 +136,7 @@ export const useChatStore = defineStore('chat', () => {
 
   return {
     currentConversationId, messages, isStreaming, streamingContent,
-    ensureConversation, loadMessages, sendMessage, clearMessages
+    ensureConversation, loadMessages, sendMessage, clearMessages,
+    switchTo, newConversation
   }
 })
