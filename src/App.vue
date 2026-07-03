@@ -1,18 +1,19 @@
+
 <template>
-  <div class="app">
-    <main class="stage">
-      <div class="kaomoji">{{ kaomoji }}</div>
-      <p class="greeting">你好，我在这里。</p>
-      <p class="subtitle">Nowhere is now-here.</p>
-    </main>
-  </div>
+  <router-view />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted } from 'vue'
+import { useSettingsStore } from './stores/settings'
 
-const kaomoji = ref('(˶ˆᗜˆ˵)')
+const settings = useSettingsStore()
+
+onMounted(() => {
+  settings.load()
+})
 </script>
+
 
 <style scoped>
 .app {

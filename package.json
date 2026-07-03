@@ -1,7 +1,7 @@
 {
   "name": "nowhere",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "Nowhere - AI emotional companion, always here.",
   "scripts": {
@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.38"
+    "dexie": "^4.0.8",
+    "pinia": "^2.2.2",
+    "vue": "^3.4.38",
+    "vue-router": "^4.4.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.3",

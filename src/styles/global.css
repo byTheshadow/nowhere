@@ -18,13 +18,32 @@
   }
 }
 
+/* 手动主题覆盖 */
+:root[data-theme='light'] {
+  --bg-primary: #f6f1ea;
+  --bg-secondary: #ffffff;
+  --text-primary: #3a3532;
+  --text-secondary: #8a827c;
+  --accent: #d4a373;
+  --border: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme='dark'] {
+  --bg-primary: #1a1816;
+  --bg-secondary: #24211e;
+  --text-primary: #ebe5df;
+  --text-secondary: #8f8880;
+  --accent: #d4a373;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body {
+html, body, #app {
   height: 100%;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -38,3 +57,5 @@ html, body {
 body {
   overscroll-behavior: none;
 }
+
+a { color: inherit; }
