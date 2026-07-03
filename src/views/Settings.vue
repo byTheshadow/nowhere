@@ -7,6 +7,14 @@
     </header>
 
     <main class="content">
+          <section class="card">
+        <h2>AI</h2>
+        <div class="row">
+          <label>接口配置</label>
+          <router-link to="/ai" class="link-btn">前往配置 →</router-link>
+        </div>
+      </section>
+
       <section class="card">
         <h2>外观</h2>
         <div class="row">
@@ -287,4 +295,15 @@ button:hover {
   border-radius: 8px;
   border: 1px dashed var(--border);
 }
+.link-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.link-btn:hover { border-color: var(--accent); }
+
 </style>
