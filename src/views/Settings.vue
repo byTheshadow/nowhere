@@ -25,7 +25,16 @@
             <option value="dark">深色</option>
           </select>
         </div>
+        
       </section>
+            <section class="card">
+        <h2>对话</h2>
+        <div class="row">
+          <label>历史记录</label>
+          <router-link to="/history" class="link-btn">查看全部 →</router-link>
+        </div>
+      </section>
+
 
       <section class="card">
         <h2>调试</h2>
