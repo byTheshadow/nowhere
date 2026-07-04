@@ -1,5 +1,4 @@
 export const builtinKnowledge = [
-    
   {
     id: 'builtin_diet_001',
     type: 'diet',
@@ -41,6 +40,48 @@ export const builtinKnowledge = [
     relatedSymptoms: ['入睡困难', '多梦'],
     relatedEmotions: ['焦虑', '紧张'],
     promptHint: '推荐适合睡前饮用的温和助眠饮品'
+  },
+  {
+    id: 'builtin_diet_004',
+    type: 'diet',
+    title: '肠胃不畅时的膳食纤维补充',
+    content: '遇到排便不畅或轻度便秘时，可适当增加富含膳食纤维的食物，如燕麦、火龙果、菠菜和熟透的香蕉。同时保证每日充足的温水摄入，促进肠道蠕动。可配合少量含益生菌的酸奶。若便秘伴随剧烈腹痛、便血或持续多日无改善，请及时前往医院就诊。',
+    tags: ['便秘', '膳食纤维', '食疗', '肠胃'],
+    source: 'builtin',
+    safetyLevel: 'safe',
+    priority: 3,
+    contraindications: ['急性肠胃炎', '肠梗阻'],
+    relatedSymptoms: ['排便困难', '腹胀'],
+    relatedEmotions: ['烦躁', '焦虑'],
+    promptHint: '提供缓解轻度便秘的饮食方案'
+  },
+  {
+    id: 'builtin_diet_005',
+    type: 'diet',
+    title: '咽喉肿痛时的清润饮食',
+    content: '嗓子干哑或轻微咽痛时，饮食宜清淡易消化。可饮用温热的冰糖雪梨汤、白萝卜水或蜂蜜水（一岁以下婴儿禁用蜂蜜）。多吃富含维生素C的蔬果，避免辛辣、油炸及过烫食物刺激咽喉。若咽痛剧烈导致吞咽困难、伴随高热不退或呼吸急促，请立即就医。',
+    tags: ['咽喉痛', '清润', '食疗', '维C'],
+    source: 'builtin',
+    safetyLevel: 'safe',
+    priority: 3,
+    contraindications: ['糖尿病需控糖', '婴儿禁用蜂蜜'],
+    relatedSymptoms: ['咽痛', '声音嘶哑', '干咳'],
+    relatedEmotions: ['低落', '烦躁'],
+    promptHint: '推荐缓解咽干咽痛的温和食疗'
+  },
+  {
+    id: 'builtin_diet_006',
+    type: 'diet',
+    title: '缓解用眼过度的护眼食谱',
+    content: '长时间看屏幕导致眼睛干涩疲劳时，可多摄入富含维生素A和叶黄素的食物，如胡萝卜、南瓜、蓝莓、紫甘蓝及深绿色叶菜。也可泡一杯温和的枸杞菊花茶饮用。注意用眼卫生。若眼睛出现剧痛、视力骤降或有飞蚊症急剧增加，必须立刻前往眼科就诊。',
+    tags: ['护眼', '眼疲劳', '食谱', '营养'],
+    source: 'builtin',
+    safetyLevel: 'safe',
+    priority: 3,
+    contraindications: ['对菊花或枸杞过敏'],
+    relatedSymptoms: ['眼干涩', '视疲劳'],
+    relatedEmotions: ['疲惫'],
+    promptHint: '推荐缓解视力疲劳的营养食物'
   },
   {
     id: 'builtin_tcm_001',
@@ -125,6 +166,48 @@ export const builtinKnowledge = [
     relatedSymptoms: ['胸闷', '紧张', '头痛'],
     relatedEmotions: ['焦虑', '压力'],
     promptHint: '引导进行腹式呼吸放松'
+  },
+  {
+    id: 'builtin_mental_004',
+    type: 'mental',
+    title: '渐进式肌肉放松缓解紧张',
+    content: '当身心紧绷时，可尝试渐进式肌肉放松。舒适坐下或平躺，从脚趾开始，用力收紧肌肉保持5秒，然后彻底放松10秒，感受放松的温暖感。逐步向上至腿部、腹部、肩颈和面部。若感到持续情绪低落或有自伤倾向，请务必立刻寻求专业心理医生帮助。',
+    tags: ['肌肉放松', '躯体化', '解压', '紧张'],
+    source: 'builtin',
+    safetyLevel: 'safe',
+    priority: 3,
+    contraindications: ['急性肌肉拉伤', '重度抑郁发作'],
+    relatedSymptoms: ['肌肉紧绷', '躯体不适'],
+    relatedEmotions: ['焦虑', '压力'],
+    promptHint: '指导进行全身渐进式肌肉放松'
+  },
+  {
+    id: 'builtin_mental_005',
+    type: 'mental',
+    title: '面对繁杂思绪的“溪流落叶”法',
+    content: '脑海充满负面想法时，可闭上眼，想象坐在小溪边。将每个飘过的念头放在一片落叶上，看着它顺水流走，不评判也不挽留。这有助于与焦虑思维保持安全距离。若负面念头过于强烈，甚至出现轻生或自残想法，请立刻联系危机干预热线或寻求精神科就诊。',
+    tags: ['正念', '杂念', '认知解离', '放松'],
+    source: 'builtin',
+    safetyLevel: 'safe',
+    priority: 2,
+    contraindications: ['存在严重幻觉或妄想'],
+    relatedSymptoms: ['思维奔逸', '注意力不集中'],
+    relatedEmotions: ['焦虑', '抑郁', '内耗'],
+    promptHint: '提供通过正念想象缓解思维反刍的方法'
+  },
+  {
+    id: 'builtin_mental_006',
+    type: 'mental',
+    title: '情绪低谷时的自我关怀练习',
+    content: '感到挫败或自我怀疑时，尝试像对待好朋友那样对待自己。把手放在胸口感受温度，默默告诉自己：“我现在感到痛苦，但痛苦是人类共有的部分，愿我能对自己温柔以待。”允许自己短暂休息。如果抑郁情绪持续两周以上严重影响生活，建议及时就医咨询。',
+    tags: ['自我关怀', '情绪调节', '心理支持', '接纳'],
+    source: 'builtin',
+    safetyLevel: 'safe',
+    priority: 3,
+    contraindications: ['重度抑郁症需结合药物及专业心理治疗'],
+    relatedSymptoms: ['精力减退', '哭泣'],
+    relatedEmotions: ['自责', '抑郁', '无助'],
+    promptHint: '提供低落时自我接纳与关怀的心理指导'
   },
   {
     id: 'builtin_therapy_001',
@@ -294,4 +377,4 @@ export const builtinKnowledge = [
     relatedEmotions: ['恐慌'],
     promptHint: '急性严重过敏反应的紧急处理'
   }
-]
+];
