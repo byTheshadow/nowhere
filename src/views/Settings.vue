@@ -40,6 +40,12 @@
             {{ relationsStore.count ? `${relationsStore.count} 位` : '去添加' }} →
           </router-link>
         </div>
+        <div class="row">
+          <label>记忆</label>
+          <router-link to="/memories" class="link-btn">
+            {{ memoriesStore.count ? `${memoriesStore.count} 条` : '去管理' }} →
+          </router-link>
+        </div>
       </section>
 
       <section class="card">
@@ -98,7 +104,7 @@
         <h2>关于</h2>
         <div class="row">
           <label>版本</label>
-          <span class="value">v0.0.5</span>
+          <span class="value">v0.0.6</span>
         </div>
       </section>
     </main>
@@ -111,12 +117,14 @@ import { useSettingsStore } from '../stores/settings'
 import { usePersonasStore } from '../stores/personas'
 import { useProfileStore } from '../stores/profile'
 import { useRelationsStore } from '../stores/relations'
+import { useMemoriesStore } from '../stores/memories'
 import { logger } from '../services/logger'
 
 const settings = useSettingsStore()
 const personas = usePersonasStore()
 const profileStore = useProfileStore()
 const relationsStore = useRelationsStore()
+const memoriesStore = useMemoriesStore()
 const logs = ref([])
 
 async function refresh() {
@@ -129,11 +137,9 @@ async function clear() {
 }
 
 function triggerError() {
-  // 故意抛错，测试全局错误捕获
   setTimeout(() => {
     throw new Error('这是一个测试错误 - Test error from Settings')
   }, 0)
-  // 稍等一下再刷新
   setTimeout(refresh, 300)
 }
 
@@ -157,6 +163,7 @@ onMounted(async () => {
   if (!personas.isLoaded) await personas.load()
   if (!profileStore.isLoaded) await profileStore.load()
   if (!relationsStore.isLoaded) await relationsStore.load()
+  if (!memoriesStore.isLoaded) await memoriesStore.load()
 })
 </script>
 
@@ -353,7 +360,6 @@ button:hover {
 }
 .link-btn:hover { border-color: var(--accent); }
 
-/* 人设入口：预览 + 箭头 */
 .persona-link {
   display: inline-flex;
   align-items: center;
