@@ -9,13 +9,12 @@ const routes = [
   { path: '/profile', name: 'profile', component: () => import('../views/Profile.vue') },
   { path: '/relations', name: 'relations', component: () => import('../views/Relations.vue') },
   { path: '/memories', name: 'memories', component: () => import('../views/Memories.vue') },
-  { path: '/emotions', name: 'emotions', component: () => import('../views/Emotions.vue') }
+  { path: '/emotions', name: 'emotions', component: () => import('../views/Emotions.vue') },
+  { path: '/knowledge', name: 'knowledge', component: () => import('../views/Knowledge.vue') }
 ]
 
 export const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
-
-
 

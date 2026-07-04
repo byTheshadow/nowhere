@@ -1,9 +1,11 @@
 // src/utils/contextBuilder.js
-// Phase 6.5 + 7.3 + 8.5：把用户档案 + 关系库 + 记忆 + 情绪日记拼成 system prompt 片段
+// Phase 6.5 + 7.3 + 8.5 + Knowledge：
+// 把用户档案 + 关系库 + 记忆 + 情绪日记 + 知识库拼成 system prompt 片段
 //
 // 纯函数工具：只依赖传入数据，不引用 store，方便单测和复用。
 
 import { searchMemories } from './memorySearch'
+import { searchKnowledge, mergeKnowledge } from './knowledgeSearch'
 
 // ============ 枚举中文映射 ============
 const GENDER_LABEL = {
@@ -52,6 +54,18 @@ const EMOTION_LABEL = {
   lonely: '孤独',
   confused: '困惑',
   neutral: '普通'
+}
+
+const KNOWLEDGE_TYPE_LABEL = {
+  diet: '食疗',
+  tcm: '中医养生',
+  mental: '心理疏解',
+  therapy: '心理疗法',
+  seasonal: '节气时令',
+  breathing: '呼吸放松',
+  sleep: '睡眠调节',
+  emergency: '紧急安抚',
+  custom: '自定义'
 }
 
 // ============ 内部工具 ============
@@ -117,6 +131,32 @@ function formatEmotion(item) {
   if (item.source) {
     line += `（来源：${item.source === 'chat' ? '聊天' : '手动'}）`
   }
+  return line
+}
+
+/** 单条知识渲染成 Markdown */
+function formatKnowledge(item) {
+  if (!item) return ''
+
+  const typeLabel = KNOWLEDGE_TYPE_LABEL[item.type] || item.type || '知识'
+  const sourceLabel = item.source === 'user' ? '用户自定义' : '内置'
+  const title = item.title || '未命名知识'
+  const content = item.content || ''
+
+  let line = `- [${sourceLabel}·${typeLabel}] ${title}：${content}`
+
+  if (item.tags && item.tags.length) {
+    line += `（标签：${item.tags.join('、')}）`
+  }
+
+  if (item.contraindications && item.contraindications.length) {
+    line += `；注意：${item.contraindications.join('、')}`
+  }
+
+  if (item.promptHint) {
+    line += `；使用提示：${item.promptHint}`
+  }
+
   return line
 }
 
@@ -279,16 +319,42 @@ export function buildEmotionsContext(emotions, opts = {}) {
 }
 
 /**
+ * 把已检索出的 Top K 知识渲染成 Markdown
+ * @param {Array} searched - searchKnowledge 返回的 { knowledge, score } 数组
+ *                            或纯 knowledge 数组
+ * @returns {string}
+ */
+export function buildKnowledgeContext(searched) {
+  if (!Array.isArray(searched) || searched.length === 0) return ''
+
+  const items = searched
+    .map((x) => (x && x.knowledge ? x.knowledge : x))
+    .filter(Boolean)
+
+  if (!items.length) return ''
+
+  return [
+    '## 可参考的知识库内容',
+    items.map(formatKnowledge).join('\n'),
+    '（请把这些内容作为参考资料自然融入回复；不要机械照搬；不要把知识库内容说成诊断结论；涉及疾病、用药、严重症状或自伤风险时，应提醒用户寻求专业帮助。）'
+  ].join('\n')
+}
+
+/**
  * 一站式拼接完整上下文
  * @param {Object} params
  * @param {Object} [params.profile] - 用户档案
  * @param {Array}  [params.relations] - 全部关系
  * @param {Array}  [params.memories] - 全部记忆（内部会做检索）
  * @param {Array}  [params.emotions] - 情绪日记列表（通常传最近 7~30 条）
- * @param {string} [params.userMessage] - 当前用户消息（用于智能匹配关系 / 检索记忆）
+ * @param {Array}  [params.knowledge] - 全部知识库，已合并时可直接传这个
+ * @param {Array}  [params.builtinKnowledge] - 内置知识库
+ * @param {Array}  [params.userKnowledge] - 用户自定义知识库
+ * @param {string} [params.userMessage] - 当前用户消息（用于智能匹配关系 / 检索记忆 / 检索知识）
  * @param {number} [params.maxRelations=10]
  * @param {number} [params.maxMemories=5]
  * @param {number} [params.maxEmotions=7]
+ * @param {number} [params.maxKnowledge=5]
  * @returns {string} 完整 Markdown（可能为空串）
  */
 export function buildFullContext(params = {}) {
@@ -297,10 +363,14 @@ export function buildFullContext(params = {}) {
     relations,
     memories,
     emotions,
+    knowledge,
+    builtinKnowledge,
+    userKnowledge,
     userMessage,
     maxRelations = 10,
     maxMemories = 5,
-    maxEmotions = 7
+    maxEmotions = 7,
+    maxKnowledge = 5
   } = params
 
   const sections = []
@@ -327,6 +397,18 @@ export function buildFullContext(params = {}) {
     if (memSection) sections.push(memSection)
   }
 
+  const allKnowledge = Array.isArray(knowledge)
+    ? knowledge
+    : mergeKnowledge(builtinKnowledge, userKnowledge)
+
+  if (Array.isArray(allKnowledge) && allKnowledge.length > 0) {
+    const searchedKnowledge = searchKnowledge(userMessage || '', allKnowledge, {
+      topK: maxKnowledge
+    })
+    const knowledgeSection = buildKnowledgeContext(searchedKnowledge)
+    if (knowledgeSection) sections.push(knowledgeSection)
+  }
+
   if (Array.isArray(emotions) && emotions.length > 0) {
     const emoSection = buildEmotionsContext(emotions, {
       maxItems: maxEmotions
@@ -336,4 +418,5 @@ export function buildFullContext(params = {}) {
 
   return sections.join('\n\n')
 }
+
 

@@ -42,6 +42,41 @@ db.version(1).stores({
   logs: 'id, level, timestamp'
 })
 
+db.version(2).stores({
+  // 对话（一次完整的会话）
+  conversations: 'id, title, createdAt, updatedAt, personaId, isPinned, *tags',
+
+  // 消息（会话中的每一条）
+  messages: 'id, conversationId, role, timestamp, mode',
+
+  // 用户档案（单例，id 固定为 'me'）
+  profile: 'id',
+
+  // AI 人设
+  personas: 'id, name, isPreset, isActive',
+
+  // 关系库
+  relations: 'id, name, relation, sentiment, updatedAt, *tags',
+
+  // 向量记忆
+  memories: 'id, type, importance, createdAt, *tags',
+
+  // 情绪日记（每天一条聚合）
+  emotions: 'date, dominantEmotion, intensity',
+
+  // 提醒
+  reminders: 'id, type, nextTriggerAt, isActive',
+
+  // 设置（键值对）
+  settings: 'key',
+
+  // 日志
+  logs: 'id, level, timestamp',
+
+  // 用户自定义知识库
+  knowledge: 'id, type, title, updatedAt, *tags'
+})
+
 /**
  * 生成 UUID
  */

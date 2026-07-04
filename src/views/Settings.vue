@@ -35,6 +35,12 @@
           </router-link>
         </div>
         <div class="row">
+          <label>我的知识库</label>
+          <router-link to="/knowledge" class="link-btn">
+            去管理 →
+          </router-link>
+        </div>
+        <div class="row">
           <label>关系库</label>
           <router-link to="/relations" class="link-btn">
             {{ relationsStore.count ? `${relationsStore.count} 位` : '去添加' }} →
@@ -393,4 +399,3 @@ button:hover {
   color: var(--text-secondary);
 }
 </style>
-
