@@ -40,38 +40,7 @@ const NOTICE_THRESHOLDS = [
   }
 ]
 
-/**
- * Phase 8：聊天颜文字情绪 → 情绪日记情绪
- *
- * 聊天使用的是主页颜文字状态：
- * idle / happy / thinking / listening / caring / worried / sad / excited / sleepy / confused
- *
- * 情绪日记使用的是每日记录情绪：
- * happy / calm / sad / anxious / angry / tired / stressed / lonely / confused / neutral
- */
-const CHAT_EMOTION_TO_DAILY_EMOTION = {
-  idle: 'neutral',
-  happy: 'happy',
-  thinking: 'neutral',
-  listening: 'calm',
-  caring: 'calm',
-  worried: 'anxious',
-  sad: 'sad',
-  excited: 'happy',
-  sleepy: 'tired',
-  confused: 'confused'
-}
-
-function mapChatEmotionToDailyEmotion(emotion) {
-  return CHAT_EMOTION_TO_DAILY_EMOTION[emotion] || 'neutral'
-}
-
-function estimateIntensityFromChatEmotion(emotion) {
-  if (emotion === 'worried' || emotion === 'sad' || emotion === 'excited') return 4
-  if (emotion === 'happy' || emotion === 'confused' || emotion === 'sleepy') return 3
-  if (emotion === 'listening' || emotion === 'caring' || emotion === 'thinking') return 2
-  return 1
-}
+const DAILY_EMOTION_CONTEXT_LIMIT = 7
 
 export const useChatStore = defineStore('chat', () => {
   const currentConversationId = ref(null)
@@ -90,17 +59,21 @@ export const useChatStore = defineStore('chat', () => {
     return personas
   }
 
-  /** Phase 6.6 + 7.4:确保档案 + 关系库 + 记忆库已加载(幂等,并行) */
+  /** Phase 6.6 + 7.4:确保档案 + 关系库 + 记忆库 + 情绪库已加载(幂等,并行) */
   async function _ensureContextStoresLoaded() {
     const profileStore = useProfileStore()
     const relationsStore = useRelationsStore()
     const memoriesStore = useMemoriesStore()
+    const emotionsStore = useEmotionsStore()
+
     await Promise.all([
       profileStore.isLoaded ? Promise.resolve() : profileStore.load(),
       relationsStore.isLoaded ? Promise.resolve() : relationsStore.load(),
-      memoriesStore.isLoaded ? Promise.resolve() : memoriesStore.load()
+      memoriesStore.isLoaded ? Promise.resolve() : memoriesStore.load(),
+      emotionsStore.isLoaded ? Promise.resolve() : emotionsStore.load()
     ])
-    return { profileStore, relationsStore, memoriesStore }
+
+    return { profileStore, relationsStore, memoriesStore, emotionsStore }
   }
 
   /** 从消息数组里取最后一条 assistant 消息的情绪,用于恢复颜文字状态 */
@@ -156,14 +129,10 @@ export const useChatStore = defineStore('chat', () => {
 
     try {
       const emotionsStore = useEmotionsStore()
-      const dailyEmotion = mapChatEmotionToDailyEmotion(emotion)
-
       await emotionsStore.recordFromChat({
-        emotion: dailyEmotion,
-        intensity: estimateIntensityFromChatEmotion(emotion),
-        note: cleanText
-          ? `来自聊天：${String(cleanText).slice(0, 80)}`
-          : '',
+        emotion: emotion,
+        intensity: 3,
+        note: cleanText ? `来自聊天：${String(cleanText).slice(0, 80)}` : '',
         source: 'chat'
       })
     } catch (error) {
@@ -227,8 +196,8 @@ export const useChatStore = defineStore('chat', () => {
     const ai = useAIStore()
     const convStore = useConversationsStore()
     const personas = await _ensurePersonasLoaded()
-    // Phase 6.6 + 7.4:加载档案 + 关系库 + 记忆库
-    const { profileStore, relationsStore, memoriesStore } =
+    // Phase 6.6 + 7.4:加载档案 + 关系库 + 记忆库 + 情绪库
+    const { profileStore, relationsStore, memoriesStore, emotionsStore } =
       await _ensureContextStoresLoaded()
 
     if (!ai.isConfigured) {
@@ -258,14 +227,16 @@ export const useChatStore = defineStore('chat', () => {
     // 从当前 active persona 取 system prompt,兜底走 DEFAULT_SYSTEM
     const personaPrompt = personas.activePersona?.systemPrompt || DEFAULT_SYSTEM
 
-    // Phase 6.6 + 7.4:拼接档案 + 关系 + 记忆上下文
+    // Phase 6.6 + 7.4 + 8.5:拼接档案 + 关系 + 记忆 + 情绪上下文
     const userContext = buildFullContext({
       profile: profileStore.profile,
       relations: relationsStore.relations,
       memories: memoriesStore.memories,
+      emotions: emotionsStore.getRecent(DAILY_EMOTION_CONTEXT_LIMIT),
       userMessage: trimmed,
       maxRelations: 10,
-      maxMemories: 5
+      maxMemories: 5,
+      maxEmotions: DAILY_EMOTION_CONTEXT_LIMIT
     })
 
     const systemPrompt = userContext
