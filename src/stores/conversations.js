@@ -38,21 +38,25 @@ export const useConversationsStore = defineStore('conversations', () => {
     await db.settings.put({ key: CURRENT_KEY, value: id })
   }
 
-  async function create() {
+  /**
+   * 新建对话
+   * @param {string|null} personaId 可选，绑定的人设 id（用于历史回溯"这个对话是哪个人设陪的"）
+   */
+  async function create(personaId = null) {
     const id = uid('conv')
     const conv = {
       id,
       title: '新对话',
       createdAt: now(),
       updatedAt: now(),
-      personaId: null,
+      personaId: personaId || null,
       isPinned: false,
       tags: []
     }
     await db.conversations.add(toPlain(conv))
     await setCurrent(id)
     await loadAll()
-    logger.info('Conversation created', { id })
+    logger.info('Conversation created', { id, personaId: personaId || null })
     return id
   }
 
