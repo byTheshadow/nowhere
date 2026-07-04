@@ -9,6 +9,7 @@ import { usePersonasStore } from './personas'
 import { useProfileStore } from './profile'
 import { useRelationsStore } from './relations'
 import { useMemoriesStore } from './memories'
+import { useEmotionsStore } from './emotions'
 import { parseEmotion, stripForStreaming, isValidEmotion } from '../utils/emotionParser'
 import { buildFullContext } from '../utils/contextBuilder'
 
@@ -38,6 +39,39 @@ const NOTICE_THRESHOLDS = [
     content: '这个对话有点长啦，考虑新开一个窗口？重要的记得 📌 钉住哦。'
   }
 ]
+
+/**
+ * Phase 8：聊天颜文字情绪 → 情绪日记情绪
+ *
+ * 聊天使用的是主页颜文字状态：
+ * idle / happy / thinking / listening / caring / worried / sad / excited / sleepy / confused
+ *
+ * 情绪日记使用的是每日记录情绪：
+ * happy / calm / sad / anxious / angry / tired / stressed / lonely / confused / neutral
+ */
+const CHAT_EMOTION_TO_DAILY_EMOTION = {
+  idle: 'neutral',
+  happy: 'happy',
+  thinking: 'neutral',
+  listening: 'calm',
+  caring: 'calm',
+  worried: 'anxious',
+  sad: 'sad',
+  excited: 'happy',
+  sleepy: 'tired',
+  confused: 'confused'
+}
+
+function mapChatEmotionToDailyEmotion(emotion) {
+  return CHAT_EMOTION_TO_DAILY_EMOTION[emotion] || 'neutral'
+}
+
+function estimateIntensityFromChatEmotion(emotion) {
+  if (emotion === 'worried' || emotion === 'sad' || emotion === 'excited') return 4
+  if (emotion === 'happy' || emotion === 'confused' || emotion === 'sleepy') return 3
+  if (emotion === 'listening' || emotion === 'caring' || emotion === 'thinking') return 2
+  return 1
+}
 
 export const useChatStore = defineStore('chat', () => {
   const currentConversationId = ref(null)
@@ -106,6 +140,38 @@ export const useChatStore = defineStore('chat', () => {
           timestamp: now()
         })
       }
+    }
+  }
+
+  /**
+   * Phase 8：把 assistant 回复解析出的情绪同步到情绪日记。
+   *
+   * 注意：
+   * - 这是辅助记录，不能影响聊天主流程。
+   * - 所以内部 catch，只记录日志，不向外抛错。
+   * - 如果没有有效 emotion，则不写入。
+   */
+  async function _recordEmotionFromChat(emotion, cleanText) {
+    if (!isValidEmotion(emotion)) return
+
+    try {
+      const emotionsStore = useEmotionsStore()
+      const dailyEmotion = mapChatEmotionToDailyEmotion(emotion)
+
+      await emotionsStore.recordFromChat({
+        emotion: dailyEmotion,
+        intensity: estimateIntensityFromChatEmotion(emotion),
+        note: cleanText
+          ? `来自聊天：${String(cleanText).slice(0, 80)}`
+          : '',
+        source: 'chat'
+      })
+    } catch (error) {
+      logger.warn('Record emotion from chat failed', {
+        message: error?.message,
+        stack: error?.stack,
+        emotion
+      })
     }
   }
 
@@ -256,6 +322,9 @@ export const useChatStore = defineStore('chat', () => {
       // 更新当前颜文字情绪(解析失败则回到 idle)
       currentEmotion.value = emotion || 'idle'
 
+      // Phase 8：把聊天情绪同步到情绪日记
+      await _recordEmotionFromChat(emotion, cleanText)
+
       // Phase 7.4:跨越阈值时插入软提示（仅内存）
       const newRealCount = _countRealMessages()
       _maybeAppendContextNotice(prevRealCount, newRealCount, convId)
@@ -286,4 +355,3 @@ export const useChatStore = defineStore('chat', () => {
     switchTo, newConversation
   }
 })
-
