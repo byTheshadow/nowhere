@@ -1,5 +1,5 @@
 // src/utils/contextBuilder.js
-// Phase 6.5 + 7.3：把用户档案 + 关系库 + 记忆拼成 system prompt 片段
+// Phase 6.5 + 7.3 + 8.5：把用户档案 + 关系库 + 记忆 + 情绪日记拼成 system prompt 片段
 //
 // 纯函数工具：只依赖传入数据，不引用 store，方便单测和复用。
 
@@ -39,6 +39,19 @@ const IMPORTANCE_LABEL = {
   3: '核心',
   2: '重要',
   1: '一般'
+}
+
+const EMOTION_LABEL = {
+  happy: '开心',
+  calm: '平静',
+  sad: '难过',
+  anxious: '焦虑',
+  angry: '生气',
+  tired: '疲惫',
+  stressed: '压力大',
+  lonely: '孤独',
+  confused: '困惑',
+  neutral: '普通'
 }
 
 // ============ 内部工具 ============
@@ -88,6 +101,21 @@ function formatMemory(m) {
   let line = `- [${impLabel}·${typeLabel}] ${m.content}`
   if (m.tags && m.tags.length) {
     line += `（${m.tags.join('、')}）`
+  }
+  return line
+}
+
+/** 单条情绪记录渲染成一行 Markdown */
+function formatEmotion(item) {
+  if (!item) return ''
+  const label = EMOTION_LABEL[item.dominantEmotion] || item.dominantEmotion || '普通'
+  const intensity = Number.isFinite(Number(item.intensity)) ? Number(item.intensity) : 0
+  let line = `- ${item.date}：${label}，强度 ${intensity}/5`
+  if (item.note) {
+    line += `，备注：${item.note}`
+  }
+  if (item.source) {
+    line += `（来源：${item.source === 'chat' ? '聊天' : '手动'}）`
   }
   return line
 }
@@ -211,14 +239,56 @@ export function buildMemoriesContext(searched) {
 }
 
 /**
+ * 把近期情绪记录渲染成 Markdown
+ * @param {Array} emotions
+ * @param {Object} [opts]
+ * @param {number} [opts.maxItems=7]
+ * @returns {string}
+ */
+export function buildEmotionsContext(emotions, opts = {}) {
+  if (!Array.isArray(emotions) || emotions.length === 0) return ''
+
+  const { maxItems = 7 } = opts
+  let list = emotions.filter(Boolean)
+
+  if (list.length > maxItems) {
+    list = list.slice(-maxItems)
+  }
+
+  const validItems = list.filter((item) => item.date || item.dominantEmotion)
+  if (!validItems.length) return ''
+
+  const latest = validItems[validItems.length - 1]
+  const latestLabel = EMOTION_LABEL[latest.dominantEmotion] || latest.dominantEmotion || '普通'
+
+  const recentLabels = [...new Set(
+    validItems
+      .map((item) => EMOTION_LABEL[item.dominantEmotion] || item.dominantEmotion || '普通')
+      .filter(Boolean)
+  )]
+
+  const lines = [
+    `- 今天 / 最近一次：${formatEmotion(latest)}`,
+  ]
+
+  if (recentLabels.length > 1) {
+    lines.push(`- 最近几次主要情绪：${recentLabels.join('、')}`)
+  }
+
+  return `## 近期情绪记录\n${lines.join('\n')}\n（请参考这些记录，回应时尽量贴近用户最近的状态，不要机械重复。）`
+}
+
+/**
  * 一站式拼接完整上下文
  * @param {Object} params
  * @param {Object} [params.profile] - 用户档案
  * @param {Array}  [params.relations] - 全部关系
  * @param {Array}  [params.memories] - 全部记忆（内部会做检索）
+ * @param {Array}  [params.emotions] - 情绪日记列表（通常传最近 7~30 条）
  * @param {string} [params.userMessage] - 当前用户消息（用于智能匹配关系 / 检索记忆）
  * @param {number} [params.maxRelations=10]
  * @param {number} [params.maxMemories=5]
+ * @param {number} [params.maxEmotions=7]
  * @returns {string} 完整 Markdown（可能为空串）
  */
 export function buildFullContext(params = {}) {
@@ -226,9 +296,11 @@ export function buildFullContext(params = {}) {
     profile,
     relations,
     memories,
+    emotions,
     userMessage,
     maxRelations = 10,
-    maxMemories = 5
+    maxMemories = 5,
+    maxEmotions = 7
   } = params
 
   const sections = []
@@ -253,6 +325,13 @@ export function buildFullContext(params = {}) {
     })
     const memSection = buildMemoriesContext(searched)
     if (memSection) sections.push(memSection)
+  }
+
+  if (Array.isArray(emotions) && emotions.length > 0) {
+    const emoSection = buildEmotionsContext(emotions, {
+      maxItems: maxEmotions
+    })
+    if (emoSection) sections.push(emoSection)
   }
 
   return sections.join('\n\n')
