@@ -43,7 +43,7 @@
           <div class="memory-head">
             <div class="memory-meta">
               <span class="memory-type">{{ typeLabel(item.type) }}</span>
-              <span class="memory-importance importance-{{ item.importance }}">
+              <span class="memory-importance" :class="`importance-${item.importance}`">
                 {{ importanceLabel(item.importance) }}
               </span>
               <span v-if="item.source" class="memory-source">{{ sourceLabel(item.source) }}</span>
