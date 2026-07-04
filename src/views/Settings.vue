@@ -46,6 +46,12 @@
             {{ memoriesStore.count ? `${memoriesStore.count} 条` : '去管理' }} →
           </router-link>
         </div>
+        <div class="row">
+          <label>情绪日记</label>
+          <router-link to="/emotions" class="link-btn">
+            去记录 →
+          </router-link>
+        </div>
       </section>
 
       <section class="card">
