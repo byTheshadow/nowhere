@@ -1,82 +1,42 @@
 :root {
-  --bg-primary: #f6f1ea;
+  --bg-primary: #fafafa;
   --bg-secondary: #ffffff;
-  --text-primary: #3a3532;
-  --text-secondary: #8a827c;
-  --accent: #d4a373;
-  --border: rgba(0, 0, 0, 0.06);
+  --text-primary: #161616;
+  --text-secondary: #767676;
+  --accent: #111111;
+  --border: rgba(0, 0, 0, 0.08);
 }
 
-/* 跟随系统：深色 */
+/* 跟随系统：深色时自动变成黑白风 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #17181d;
-    --bg-secondary: #22242b;
-    --text-primary: #f1eee8;
-    --text-secondary: #a9a39a;
-    --accent: #9db4ff;
-    --border: rgba(255, 255, 255, 0.08);
+    --bg-primary: #0f0f10;
+    --bg-secondary: #1a1a1c;
+    --text-primary: #f5f5f5;
+    --text-secondary: #b3b3b3;
+    --accent: #ffffff;
+    --border: rgba(255, 255, 255, 0.12);
   }
 }
 
-/* 手动主题：暖米浅色 */
-:root[data-theme='light'] {
-  --bg-primary: #f6f1ea;
+/* 黑白配色 */
+:root[data-theme='mono'] {
+  --bg-primary: #fafafa;
   --bg-secondary: #ffffff;
-  --text-primary: #3a3532;
-  --text-secondary: #8a827c;
-  --accent: #d4a373;
-  --border: rgba(0, 0, 0, 0.06);
+  --text-primary: #161616;
+  --text-secondary: #767676;
+  --accent: #111111;
+  --border: rgba(0, 0, 0, 0.08);
 }
 
-/* 手动主题：深色 */
-:root[data-theme='dark'] {
-  --bg-primary: #17181d;
-  --bg-secondary: #22242b;
-  --text-primary: #f1eee8;
-  --text-secondary: #a9a39a;
-  --accent: #9db4ff;
-  --border: rgba(255, 255, 255, 0.08);
-}
-
-/* 手动主题：薄荷绿 */
-:root[data-theme='mint'] {
-  --bg-primary: #eef8f3;
+/* 粉白配色 */
+:root[data-theme='rose'] {
+  --bg-primary: #fff7f9;
   --bg-secondary: #ffffff;
-  --text-primary: #23362f;
-  --text-secondary: #6f857b;
-  --accent: #5abf90;
-  --border: rgba(35, 54, 47, 0.09);
-}
-
-/* 手动主题：暮紫 */
-:root[data-theme='lavender'] {
-  --bg-primary: #f4f0fb;
-  --bg-secondary: #ffffff;
-  --text-primary: #332b42;
-  --text-secondary: #7e748d;
-  --accent: #9b7edb;
-  --border: rgba(51, 43, 66, 0.09);
-}
-
-/* 手动主题：海盐蓝 */
-:root[data-theme='sea'] {
-  --bg-primary: #edf6fb;
-  --bg-secondary: #ffffff;
-  --text-primary: #243642;
-  --text-secondary: #6f8290;
-  --accent: #5a9ecf;
-  --border: rgba(36, 54, 66, 0.09);
-}
-
-/* 手动主题：纸感米白 */
-:root[data-theme='paper'] {
-  --bg-primary: #fbf7ee;
-  --bg-secondary: #fffdf7;
-  --text-primary: #3b3328;
-  --text-secondary: #8b7d6c;
-  --accent: #c28b5c;
-  --border: rgba(59, 51, 40, 0.08);
+  --text-primary: #3a1f2a;
+  --text-secondary: #8d6a76;
+  --accent: #e57a9a;
+  --border: rgba(229, 122, 154, 0.14);
 }
 
 * {
