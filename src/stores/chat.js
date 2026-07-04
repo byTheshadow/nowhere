@@ -6,29 +6,32 @@ import { logger } from '../services/logger'
 import { useAIStore } from './ai'
 import { useConversationsStore } from './conversations'
 import { usePersonasStore } from './personas'
+import { useProfileStore } from './profile'
+import { useRelationsStore } from './relations'
 import { parseEmotion, stripForStreaming, isValidEmotion } from '../utils/emotionParser'
+import { buildFullContext } from '../utils/contextBuilder'
 
 // 兜底 system prompt：仅当 personas 尚未加载 / active persona 缺失时使用
-const DEFAULT_SYSTEM = `你是 Nowhere，一个温柔的情绪陪伴助手，风格像 Baymax。
-- 回应尽量简短、温暖、共情，不要说教。
+const DEFAULT_SYSTEM = `你是 Nowhere,一个温柔的情绪陪伴助手,风格像 Baymax。
+- 回应尽量简短、温暖、共情,不要说教。
 - 在合适的时候可以给出食疗、呼吸法、简单的中医养生建议。
-- 用户可能只是想倾诉，不要急着给建议。
+- 用户可能只是想倾诉,不要急着给建议。
 - 保持自然的口语化中文。
 
-## 情绪标签规则（必须严格遵守）
-每次回复的最末尾必须附带一个情绪标签，格式：[emotion:xxx]
+## 情绪标签规则(必须严格遵守)
+每次回复的最末尾必须附带一个情绪标签,格式:[emotion:xxx]
 xxx 只能从 idle / happy / thinking / listening / caring / worried / sad / excited / sleepy / confused 中选一个。
-标签只能出现一次，且必须在整段回复的最末尾，全部小写。`
+标签只能出现一次,且必须在整段回复的最末尾,全部小写。`
 
 export const useChatStore = defineStore('chat', () => {
   const currentConversationId = ref(null)
   const messages = ref([])
   const isStreaming = ref(false)
   const streamingContent = ref('')
-  // Phase 5：当前情绪，主页颜文字订阅这个值切换
+  // Phase 5:当前情绪,主页颜文字订阅这个值切换
   const currentEmotion = ref('idle')
 
-  /** 确保 personas store 已加载（幂等） */
+  /** 确保 personas store 已加载(幂等) */
   async function _ensurePersonasLoaded() {
     const personas = usePersonasStore()
     if (!personas.isLoaded) {
@@ -37,7 +40,18 @@ export const useChatStore = defineStore('chat', () => {
     return personas
   }
 
-  /** 从消息数组里取最后一条 assistant 消息的情绪，用于恢复颜文字状态 */
+  /** Phase 6.6:确保档案 + 关系库已加载(幂等,并行) */
+  async function _ensureContextStoresLoaded() {
+    const profileStore = useProfileStore()
+    const relationsStore = useRelationsStore()
+    await Promise.all([
+      profileStore.isLoaded ? Promise.resolve() : profileStore.load(),
+      relationsStore.isLoaded ? Promise.resolve() : relationsStore.load()
+    ])
+    return { profileStore, relationsStore }
+  }
+
+  /** 从消息数组里取最后一条 assistant 消息的情绪,用于恢复颜文字状态 */
   function _pickEmotionFromMessages(msgs) {
     for (let i = msgs.length - 1; i >= 0; i--) {
       const m = msgs[i]
@@ -60,7 +74,7 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
 
-    // 没有当前对话，新建一个（带上当前 active persona）
+    // 没有当前对话,新建一个(带上当前 active persona)
     const personas = await _ensurePersonasLoaded()
     const id = await convStore.create(personas.activePersona?.id || null)
     currentConversationId.value = id
@@ -100,6 +114,8 @@ export const useChatStore = defineStore('chat', () => {
     const ai = useAIStore()
     const convStore = useConversationsStore()
     const personas = await _ensurePersonasLoaded()
+    // Phase 6.6:加载档案 + 关系库(与 personas 并行也可,这里顺序影响很小)
+    const { profileStore, relationsStore } = await _ensureContextStoresLoaded()
 
     if (!ai.isConfigured) {
       throw new Error('请先在 设置 → AI 配置 里配置 API Key 和模型')
@@ -118,14 +134,26 @@ export const useChatStore = defineStore('chat', () => {
     await db.messages.add(toPlain(userMsg))
     messages.value.push(userMsg)
 
-    // 第一条用户消息即用作对话标题（截断）
+    // 第一条用户消息即用作对话标题(截断)
     const isFirstUser = messages.value.filter((m) => m.role === 'user').length === 1
     if (isFirstUser) {
       await convStore.updateTitleIfNew(convId, trimmed)
     }
 
-    // 从当前 active persona 取 system prompt，兜底走 DEFAULT_SYSTEM
-    const systemPrompt = personas.activePersona?.systemPrompt || DEFAULT_SYSTEM
+    // 从当前 active persona 取 system prompt,兜底走 DEFAULT_SYSTEM
+    const personaPrompt = personas.activePersona?.systemPrompt || DEFAULT_SYSTEM
+
+    // Phase 6.6:拼接档案 + 关系上下文
+    const userContext = buildFullContext({
+      profile: profileStore.profile,
+      relations: relationsStore.relations,
+      userMessage: trimmed,
+      maxRelations: 10
+    })
+
+    const systemPrompt = userContext
+      ? `${personaPrompt}\n\n${userContext}`
+      : personaPrompt
 
     const payload = [
       { role: 'system', content: systemPrompt },
@@ -144,11 +172,11 @@ export const useChatStore = defineStore('chat', () => {
         temperature: ai.temperature
       })) {
         fullText += chunk
-        // 展示给用户看的中间态：剥离已完成 + 未完成的情绪标签片段
+        // 展示给用户看的中间态:剥离已完成 + 未完成的情绪标签片段
         streamingContent.value = stripForStreaming(fullText)
       }
 
-      // 流式结束：解析情绪 + 拿到干净正文
+      // 流式结束:解析情绪 + 拿到干净正文
       const { emotion, cleanText } = parseEmotion(fullText)
 
       const assistantMsg = {
@@ -165,7 +193,7 @@ export const useChatStore = defineStore('chat', () => {
       await db.conversations.update(convId, { updatedAt: now() })
       await convStore.loadAll()
 
-      // 更新当前颜文字情绪（解析失败则回到 idle）
+      // 更新当前颜文字情绪(解析失败则回到 idle)
       currentEmotion.value = emotion || 'idle'
     } catch (e) {
       logger.error('Chat failed', { message: e.message, stack: e.stack })
