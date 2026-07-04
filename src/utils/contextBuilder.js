@@ -1,7 +1,9 @@
 // src/utils/contextBuilder.js
-// Phase 6.5：把用户档案 + 关系库拼成 system prompt 片段
+// Phase 6.5 + 7.3：把用户档案 + 关系库 + 记忆拼成 system prompt 片段
 //
 // 纯函数工具：只依赖传入数据，不引用 store，方便单测和复用。
+
+import { searchMemories } from './memorySearch'
 
 // ============ 枚举中文映射 ============
 const GENDER_LABEL = {
@@ -23,6 +25,20 @@ const RELATION_LABEL = {
   partner: '恋人 / 伴侣',
   pet: '宠物',
   other: '其他'
+}
+
+const MEMORY_TYPE_LABEL = {
+  preference: '偏好',
+  fact: '事实',
+  event: '事件',
+  feeling: '心情',
+  goal: '目标'
+}
+
+const IMPORTANCE_LABEL = {
+  3: '核心',
+  2: '重要',
+  1: '一般'
 }
 
 // ============ 内部工具 ============
@@ -63,6 +79,17 @@ function formatRelation(r) {
   if (r.note) extras.push(r.note)
   if (r.tags && r.tags.length) extras.push(`标签：${r.tags.join('、')}`)
   return extras.length ? `${head}：${extras.join('；')}` : head
+}
+
+/** 单条记忆渲染成一行 Markdown */
+function formatMemory(m) {
+  const impLabel = IMPORTANCE_LABEL[m.importance] || '一般'
+  const typeLabel = MEMORY_TYPE_LABEL[m.type] || '事实'
+  let line = `- [${impLabel}·${typeLabel}] ${m.content}`
+  if (m.tags && m.tags.length) {
+    line += `（${m.tags.join('、')}）`
+  }
+  return line
 }
 
 // ============ 对外 API ============
@@ -168,20 +195,40 @@ export function buildRelationsContext(relations, opts = {}) {
 }
 
 /**
+ * 把已检索出的 Top K 记忆渲染成 Markdown
+ * @param {Array} searched - searchMemories 返回的原始记忆数组（不含 score）
+ *                            或 { memory, score } 结构（内部会自动兼容）
+ * @returns {string}
+ */
+export function buildMemoriesContext(searched) {
+  if (!Array.isArray(searched) || searched.length === 0) return ''
+
+  // 兼容两种输入：纯 memory 数组 或 { memory, score } 数组
+  const items = searched.map((x) => (x && x.memory ? x.memory : x)).filter(Boolean)
+  if (!items.length) return ''
+
+  return `## 关于用户的长期记忆\n${items.map(formatMemory).join('\n')}\n（这些是用户手动标记为需要长期记住的信息，请自然融入对话，不要机械引用。）`
+}
+
+/**
  * 一站式拼接完整上下文
  * @param {Object} params
  * @param {Object} [params.profile] - 用户档案
  * @param {Array}  [params.relations] - 全部关系
- * @param {string} [params.userMessage] - 当前用户消息（用于智能匹配关系）
- * @param {number} [params.maxRelations=10] - 无 mention 时最多列出多少条
+ * @param {Array}  [params.memories] - 全部记忆（内部会做检索）
+ * @param {string} [params.userMessage] - 当前用户消息（用于智能匹配关系 / 检索记忆）
+ * @param {number} [params.maxRelations=10]
+ * @param {number} [params.maxMemories=5]
  * @returns {string} 完整 Markdown（可能为空串）
  */
 export function buildFullContext(params = {}) {
   const {
     profile,
     relations,
+    memories,
     userMessage,
-    maxRelations = 10
+    maxRelations = 10,
+    maxMemories = 5
   } = params
 
   const sections = []
@@ -200,5 +247,14 @@ export function buildFullContext(params = {}) {
     if (rel) sections.push(rel)
   }
 
+  if (Array.isArray(memories) && memories.length > 0) {
+    const searched = searchMemories(userMessage || '', memories, {
+      topK: maxMemories
+    })
+    const memSection = buildMemoriesContext(searched)
+    if (memSection) sections.push(memSection)
+  }
+
   return sections.join('\n\n')
 }
+
