@@ -66,14 +66,29 @@
           <label>主题</label>
           <select :value="settings.theme" @change="onThemeChange">
             <option value="auto">跟随系统</option>
-            <option value="light">浅色</option>
+            <option value="light">暖米浅色</option>
             <option value="dark">深色</option>
+            <option value="mint">薄荷绿</option>
+            <option value="lavender">暮紫</option>
+            <option value="sea">海盐蓝</option>
+            <option value="paper">纸感米白</option>
           </select>
         </div>
       </section>
 
       <section class="card">
         <h2>对话</h2>
+        <div class="row">
+          <label>
+            <span>对话模式</span>
+            <span class="desc">树洞模式会减少建议，优先倾听</span>
+          </label>
+          <select :value="settings.chatMode || 'normal'" @change="onChatModeChange">
+            <option value="normal">普通陪伴</option>
+            <option value="treehole">树洞模式</option>
+          </select>
+        </div>
+
         <div class="row">
           <label>历史记录</label>
           <router-link to="/history" class="link-btn">查看全部 →</router-link>
@@ -159,6 +174,10 @@ function onThemeChange(e) {
   settings.set('theme', e.target.value)
 }
 
+function onChatModeChange(e) {
+  settings.set('chatMode', e.target.value)
+}
+
 function formatTime(ts) {
   const d = new Date(ts)
   return d.toLocaleString('zh-CN', { hour12: false })
@@ -215,6 +234,7 @@ onMounted(async () => {
   text-decoration: none;
   font-size: 18px;
 }
+
 .icon-btn:hover {
   background: var(--border);
   color: var(--text-primary);
@@ -251,11 +271,21 @@ onMounted(async () => {
   gap: 12px;
   margin-bottom: 12px;
 }
-.row:last-child { margin-bottom: 0; }
+
+.row:last-child {
+  margin-bottom: 0;
+}
 
 .row label {
   font-size: 14px;
   color: var(--text-primary);
+}
+
+.row label .desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .row .value {
@@ -269,7 +299,8 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-button, select {
+button,
+select {
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -279,6 +310,7 @@ button, select {
   cursor: pointer;
   font-family: inherit;
 }
+
 button:hover {
   border-color: var(--accent);
 }
@@ -298,7 +330,10 @@ button:hover {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
 }
-.log-entry:last-child { border-bottom: none; }
+
+.log-entry:last-child {
+  border-bottom: none;
+}
 
 .log-head {
   display: flex;
@@ -314,10 +349,26 @@ button:hover {
   font-size: 10px;
   letter-spacing: 0.5px;
 }
-.log-error .log-level { background: #fee; color: #c00; }
-.log-warn  .log-level { background: #fef3d0; color: #a67c00; }
-.log-info  .log-level { background: #e6f4ff; color: #0070c9; }
-.log-debug .log-level { background: var(--border); color: var(--text-secondary); }
+
+.log-error .log-level {
+  background: #fee;
+  color: #c00;
+}
+
+.log-warn .log-level {
+  background: #fef3d0;
+  color: #a67c00;
+}
+
+.log-info .log-level {
+  background: #e6f4ff;
+  color: #0070c9;
+}
+
+.log-debug .log-level {
+  background: var(--border);
+  color: var(--text-secondary);
+}
 
 .log-time {
   color: var(--text-secondary);
@@ -334,10 +385,12 @@ button:hover {
   margin-top: 6px;
   color: var(--text-secondary);
 }
+
 .log-meta summary {
   cursor: pointer;
   font-size: 11px;
 }
+
 .log-meta pre {
   margin-top: 6px;
   padding: 8px;
@@ -370,24 +423,30 @@ button:hover {
   font-size: 13px;
   transition: border-color 0.2s;
 }
-.link-btn:hover { border-color: var(--accent); }
+
+.link-btn:hover {
+  border-color: var(--accent);
+}
 
 .persona-link {
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
+
 .persona-preview {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
+
 .pp-avatar {
   font-size: 14px;
   line-height: 1;
   white-space: nowrap;
   color: var(--text-primary);
 }
+
 .pp-name {
   color: var(--text-primary);
   max-width: 120px;
@@ -395,7 +454,9 @@ button:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .persona-link .arrow {
   color: var(--text-secondary);
 }
 </style>
+

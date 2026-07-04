@@ -7,18 +7,19 @@
   --border: rgba(0, 0, 0, 0.06);
 }
 
+/* 跟随系统：深色 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #1a1816;
-    --bg-secondary: #24211e;
-    --text-primary: #ebe5df;
-    --text-secondary: #8f8880;
-    --accent: #d4a373;
+    --bg-primary: #17181d;
+    --bg-secondary: #22242b;
+    --text-primary: #f1eee8;
+    --text-secondary: #a9a39a;
+    --accent: #9db4ff;
     --border: rgba(255, 255, 255, 0.08);
   }
 }
 
-/* 手动主题覆盖 */
+/* 手动主题：暖米浅色 */
 :root[data-theme='light'] {
   --bg-primary: #f6f1ea;
   --bg-secondary: #ffffff;
@@ -28,13 +29,54 @@
   --border: rgba(0, 0, 0, 0.06);
 }
 
+/* 手动主题：深色 */
 :root[data-theme='dark'] {
-  --bg-primary: #1a1816;
-  --bg-secondary: #24211e;
-  --text-primary: #ebe5df;
-  --text-secondary: #8f8880;
-  --accent: #d4a373;
+  --bg-primary: #17181d;
+  --bg-secondary: #22242b;
+  --text-primary: #f1eee8;
+  --text-secondary: #a9a39a;
+  --accent: #9db4ff;
   --border: rgba(255, 255, 255, 0.08);
+}
+
+/* 手动主题：薄荷绿 */
+:root[data-theme='mint'] {
+  --bg-primary: #eef8f3;
+  --bg-secondary: #ffffff;
+  --text-primary: #23362f;
+  --text-secondary: #6f857b;
+  --accent: #5abf90;
+  --border: rgba(35, 54, 47, 0.09);
+}
+
+/* 手动主题：暮紫 */
+:root[data-theme='lavender'] {
+  --bg-primary: #f4f0fb;
+  --bg-secondary: #ffffff;
+  --text-primary: #332b42;
+  --text-secondary: #7e748d;
+  --accent: #9b7edb;
+  --border: rgba(51, 43, 66, 0.09);
+}
+
+/* 手动主题：海盐蓝 */
+:root[data-theme='sea'] {
+  --bg-primary: #edf6fb;
+  --bg-secondary: #ffffff;
+  --text-primary: #243642;
+  --text-secondary: #6f8290;
+  --accent: #5a9ecf;
+  --border: rgba(36, 54, 66, 0.09);
+}
+
+/* 手动主题：纸感米白 */
+:root[data-theme='paper'] {
+  --bg-primary: #fbf7ee;
+  --bg-secondary: #fffdf7;
+  --text-primary: #3b3328;
+  --text-secondary: #8b7d6c;
+  --accent: #c28b5c;
+  --border: rgba(59, 51, 40, 0.08);
 }
 
 * {
@@ -43,7 +85,9 @@
   padding: 0;
 }
 
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -58,7 +102,10 @@ body {
   overscroll-behavior: none;
 }
 
-a { color: inherit; }
+a {
+  color: inherit;
+}
+
 button,
 input,
 select,
