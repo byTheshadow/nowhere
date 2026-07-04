@@ -27,6 +27,22 @@
       </section>
 
       <section class="card">
+        <h2>我的</h2>
+        <div class="row">
+          <label>我的档案</label>
+          <router-link to="/profile" class="link-btn">
+            {{ profileStore.hasProfile ? '查看 / 编辑' : '去填写' }} →
+          </router-link>
+        </div>
+        <div class="row">
+          <label>关系库</label>
+          <router-link to="/relations" class="link-btn">
+            {{ relationsStore.count ? `${relationsStore.count} 位` : '去添加' }} →
+          </router-link>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>外观</h2>
         <div class="row">
           <label>主题</label>
@@ -93,10 +109,14 @@
 import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { usePersonasStore } from '../stores/personas'
+import { useProfileStore } from '../stores/profile'
+import { useRelationsStore } from '../stores/relations'
 import { logger } from '../services/logger'
 
 const settings = useSettingsStore()
 const personas = usePersonasStore()
+const profileStore = useProfileStore()
+const relationsStore = useRelationsStore()
 const logs = ref([])
 
 async function refresh() {
@@ -135,6 +155,8 @@ function hasMeta(meta) {
 onMounted(async () => {
   await refresh()
   if (!personas.isLoaded) await personas.load()
+  if (!profileStore.isLoaded) await profileStore.load()
+  if (!relationsStore.isLoaded) await relationsStore.load()
 })
 </script>
 
