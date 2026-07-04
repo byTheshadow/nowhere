@@ -6,11 +6,13 @@ const routes = [
   { path: '/ai', name: 'ai-settings', component: () => import('../views/AISettings.vue') },
   { path: '/history', name: 'history', component: () => import('../views/History.vue') },
   { path: '/personas', name: 'personas', component: () => import('../views/Personas.vue') },
-  { path: '/profile', name: 'profile', component: () => import('../views/Profile.vue') }
+  { path: '/profile', name: 'profile', component: () => import('../views/Profile.vue') },
+  { path: '/relations', name: 'relations', component: () => import('../views/Relations.vue') }
 ]
 
 export const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
+
 
