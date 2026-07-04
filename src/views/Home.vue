@@ -34,18 +34,49 @@
       <p class="greeting" v-if="!hasContent">{{ greeting }}</p>
 
       <div class="messages" v-else>
-        <div
-          v-for="msg in chat.messages"
-          :key="msg.id"
-          class="bubble"
-          :class="`bubble-${msg.role}`"
-        >
-          <div class="bubble-content">{{ msg.content }}</div>
-        </div>
+        <template v-for="msg in chat.messages" :key="msg.id">
+          <!-- 系统提示：只在页面里展示，不进 LLM 上下文 -->
+          <div
+            v-if="msg.role === 'notice'"
+            class="bubble bubble-notice"
+          >
+            <div class="bubble-content">{{ msg.content }}</div>
+            <div class="bubble-tools">
+              <button class="mini-btn mini-btn-ghost" @click="onNewChat">新建窗口</button>
+            </div>
+          </div>
+
+          <!-- 普通用户 / 助手消息 -->
+          <div
+            v-else
+            class="bubble"
+            :class="`bubble-${msg.role}`"
+          >
+            <div class="bubble-head">
+              <span class="bubble-role">
+                {{ msg.role === 'user' ? '我' : 'Nowhere' }}
+              </span>
+              <button
+                v-if="msg.role === 'user' || msg.role === 'assistant'"
+                class="pin-btn"
+                @click="openPinModal(msg)"
+                title="记住这条内容"
+              >
+                📌 记住
+              </button>
+            </div>
+
+            <div class="bubble-content">{{ msg.content }}</div>
+          </div>
+        </template>
+
         <div
           v-if="chat.isStreaming"
           class="bubble bubble-assistant streaming"
         >
+          <div class="bubble-head">
+            <span class="bubble-role">Nowhere</span>
+          </div>
           <div class="bubble-content">
             {{ chat.streamingContent || '…' }}
             <span class="cursor" v-if="chat.streamingContent">▊</span>
@@ -84,6 +115,65 @@
       v-if="pickerOpen"
       @close="pickerOpen = false"
     />
+
+    <!-- 钉住记忆弹窗 -->
+    <div v-if="pinModalOpen" class="modal-overlay" @click.self="closePinModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>记住这条内容</h3>
+          <button class="icon-btn" @click="closePinModal" title="关闭">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <label class="field">
+            <span class="field-label">内容</span>
+            <textarea
+              v-model="pinForm.content"
+              rows="4"
+              class="field-input"
+              placeholder="这条会保存到长期记忆里"
+            />
+          </label>
+
+          <label class="field">
+            <span class="field-label">类型</span>
+            <select v-model="pinForm.type" class="field-input">
+              <option v-for="item in memoryTypes" :key="item.value" :value="item.value">
+                {{ item.label }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">重要度</span>
+            <select v-model="pinForm.importance" class="field-input">
+              <option v-for="item in importanceLevels" :key="item.value" :value="item.value">
+                {{ item.label }}
+              </option>
+            </select>
+            <span class="field-hint">1 = 一般，2 = 重要，3 = 核心</span>
+          </label>
+
+          <label class="field">
+            <span class="field-label">标签</span>
+            <input
+              v-model="pinForm.tagsText"
+              class="field-input"
+              type="text"
+              placeholder="例如：饮食, 失眠, 家人"
+            />
+            <span class="field-hint">用逗号分隔，可留空</span>
+          </label>
+
+          <div v-if="pinError" class="modal-error">{{ pinError }}</div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="closePinModal">取消</button>
+          <button class="btn-primary" @click="savePin">保存到记忆</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -93,6 +183,7 @@ import { useChatStore } from '../stores/chat'
 import { useAIStore } from '../stores/ai'
 import { useConversationsStore } from '../stores/conversations'
 import { usePersonasStore } from '../stores/personas'
+import { useMemoriesStore, MEMORY_TYPES, IMPORTANCE_LEVELS } from '../stores/memories'
 import { logger } from '../services/logger'
 import ChatSidebar from '../components/ChatSidebar.vue'
 import PersonaPicker from '../components/PersonaPicker.vue'
@@ -101,6 +192,7 @@ const chat = useChatStore()
 const ai = useAIStore()
 const convStore = useConversationsStore()
 const personas = usePersonasStore()
+const memories = useMemoriesStore()
 
 const input = ref('')
 const error = ref('')
@@ -108,6 +200,17 @@ const stageRef = ref(null)
 const textareaRef = ref(null)
 const sidebarOpen = ref(false)
 const pickerOpen = ref(false)
+
+// 记忆钉住弹窗
+const pinModalOpen = ref(false)
+const pinError = ref('')
+const pinSourceMsg = ref(null)
+const pinForm = ref({
+  content: '',
+  type: 'fact',
+  importance: 1,
+  tagsText: ''
+})
 
 // 颜文字库：从 public/knowledge/kaomoji-library.json 拉取
 const kaomojiLib = ref(null)
@@ -164,6 +267,7 @@ onMounted(async () => {
     ai.load(),
     convStore.loadCurrentId(),
     personas.isLoaded ? Promise.resolve() : personas.load(),
+    memories.isLoaded ? Promise.resolve() : memories.load(),
     loadKaomojiLib()
   ])
   await chat.loadMessages()
@@ -219,6 +323,54 @@ async function onNewChat() {
   if (chat.isStreaming) return
   await chat.newConversation()
   error.value = ''
+}
+
+function openPinModal(msg) {
+  pinError.value = ''
+  pinSourceMsg.value = msg
+  pinForm.value = {
+    content: msg?.content || '',
+    type: 'fact',
+    importance: 1,
+    tagsText: ''
+  }
+  pinModalOpen.value = true
+}
+
+function closePinModal() {
+  pinModalOpen.value = false
+  pinError.value = ''
+  pinSourceMsg.value = null
+}
+
+async function savePin() {
+  const source = pinSourceMsg.value
+  if (!source) return
+
+  const content = String(pinForm.value.content || '').trim()
+  if (!content) {
+    pinError.value = '内容不能为空'
+    return
+  }
+
+  const tags = String(pinForm.value.tagsText || '')
+    .split(/[，,]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  try {
+    await memories.pinFromMessage({
+      content,
+      messageId: source.id,
+      conversationId: source.conversationId,
+      type: pinForm.value.type,
+      importance: Number(pinForm.value.importance),
+      tags
+    })
+    closePinModal()
+  } catch (e) {
+    pinError.value = e.message || '保存失败'
+  }
 }
 </script>
 
@@ -359,12 +511,57 @@ async function onNewChat() {
   word-break: break-word;
   animation: fadeIn 0.3s ease-out;
 }
+
+.bubble-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.bubble-role {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.pin-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.pin-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
 .bubble-user {
   align-self: flex-end;
   background: var(--accent);
   color: white;
   border-bottom-right-radius: 4px;
 }
+.bubble-user .bubble-role,
+.bubble-user .pin-btn {
+  color: rgba(255, 255, 255, 0.9);
+}
+.bubble-user .pin-btn {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.bubble-user .pin-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
 .bubble-assistant {
   align-self: flex-start;
   background: var(--bg-secondary);
@@ -372,6 +569,41 @@ async function onNewChat() {
   border: 1px solid var(--border);
   border-bottom-left-radius: 4px;
 }
+
+.bubble-notice {
+  align-self: center;
+  max-width: 90%;
+  background: rgba(127, 127, 127, 0.08);
+  border: 1px dashed var(--border);
+  color: var(--text-secondary);
+  border-radius: 14px;
+}
+.bubble-notice .bubble-content {
+  font-size: 14px;
+}
+.bubble-tools {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mini-btn {
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+}
+.mini-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+.mini-btn-ghost {
+  border-color: var(--border);
+}
+
 .cursor {
   display: inline-block;
   animation: blink 1s step-end infinite;
@@ -433,6 +665,101 @@ async function onNewChat() {
   cursor: not-allowed;
 }
 
+/* 弹窗 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+.modal {
+  width: min(92vw, 520px);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.modal-header,
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 14px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.field-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+textarea.field-input {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.6;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.modal-error {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 0, 0, 0.15);
+  background: rgba(255, 0, 0, 0.06);
+  color: #c00;
+  font-size: 13px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border);
+}
+
 @keyframes breathe {
   0%, 100% { transform: translateY(0) scale(1); }
   50%      { transform: translateY(-6px) scale(1.02); }
@@ -450,3 +777,4 @@ async function onNewChat() {
   50% { opacity: 0; }
 }
 </style>
+
