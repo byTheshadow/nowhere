@@ -7,11 +7,22 @@
     </header>
 
     <main class="content">
-          <section class="card">
+      <section class="card">
         <h2>AI</h2>
         <div class="row">
           <label>接口配置</label>
           <router-link to="/ai" class="link-btn">前往配置 →</router-link>
+        </div>
+        <div class="row">
+          <label>人设</label>
+          <router-link to="/personas" class="link-btn persona-link">
+            <span v-if="personas.activePersona" class="persona-preview">
+              <span class="pp-avatar">{{ personas.activePersona.avatar }}</span>
+              <span class="pp-name">{{ personas.activePersona.name }}</span>
+            </span>
+            <span v-else>管理人设</span>
+            <span class="arrow">→</span>
+          </router-link>
         </div>
       </section>
 
@@ -25,16 +36,15 @@
             <option value="dark">深色</option>
           </select>
         </div>
-        
       </section>
-            <section class="card">
+
+      <section class="card">
         <h2>对话</h2>
         <div class="row">
           <label>历史记录</label>
           <router-link to="/history" class="link-btn">查看全部 →</router-link>
         </div>
       </section>
-
 
       <section class="card">
         <h2>调试</h2>
@@ -72,7 +82,7 @@
         <h2>关于</h2>
         <div class="row">
           <label>版本</label>
-          <span class="value">v0.0.2</span>
+          <span class="value">v0.0.5</span>
         </div>
       </section>
     </main>
@@ -82,9 +92,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
+import { usePersonasStore } from '../stores/personas'
 import { logger } from '../services/logger'
 
 const settings = useSettingsStore()
+const personas = usePersonasStore()
 const logs = ref([])
 
 async function refresh() {
@@ -120,7 +132,10 @@ function hasMeta(meta) {
   return true
 }
 
-onMounted(refresh)
+onMounted(async () => {
+  await refresh()
+  if (!personas.isLoaded) await personas.load()
+})
 </script>
 
 <style scoped>
@@ -304,6 +319,7 @@ button:hover {
   border-radius: 8px;
   border: 1px dashed var(--border);
 }
+
 .link-btn {
   padding: 6px 12px;
   border: 1px solid var(--border);
@@ -315,4 +331,32 @@ button:hover {
 }
 .link-btn:hover { border-color: var(--accent); }
 
+/* 人设入口：预览 + 箭头 */
+.persona-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.persona-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pp-avatar {
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+.pp-name {
+  color: var(--text-primary);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.persona-link .arrow {
+  color: var(--text-secondary);
+}
 </style>
+

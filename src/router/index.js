@@ -4,7 +4,8 @@ const routes = [
   { path: '/', name: 'home', component: () => import('../views/Home.vue') },
   { path: '/settings', name: 'settings', component: () => import('../views/Settings.vue') },
   { path: '/ai', name: 'ai-settings', component: () => import('../views/AISettings.vue') },
-  { path: '/history', name: 'history', component: () => import('../views/History.vue') }
+  { path: '/history', name: 'history', component: () => import('../views/History.vue') },
+  { path: '/personas', name: 'personas', component: () => import('../views/Personas.vue') }
 ]
 
 export const router = createRouter({
