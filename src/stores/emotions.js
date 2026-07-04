@@ -1,7 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '../db/schema'
-import { now } from '../db/utils'
 
 const VALID_EMOTIONS = [
   'happy',
@@ -29,13 +28,16 @@ function todayKey() {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
 }
 
+function timestamp() {
+  return Date.now()
+}
+
 function normalizeDateKey(value) {
   if (!value) return todayKey()
 
   if (typeof value === 'string') {
     const trimmed = value.trim()
 
-    // 已经是 YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
       return trimmed
     }
@@ -119,7 +121,7 @@ export const useEmotionsStore = defineStore('emotions', () => {
   async function addEmotion(payload = {}) {
     await load()
 
-    const timestamp = now()
+    const createdAt = timestamp()
     const date = normalizeDateKey(payload.date)
 
     const item = {
@@ -128,8 +130,8 @@ export const useEmotionsStore = defineStore('emotions', () => {
       intensity: normalizeIntensity(payload.intensity),
       note: typeof payload.note === 'string' ? payload.note.trim() : '',
       source: payload.source || 'manual',
-      createdAt: payload.createdAt || timestamp,
-      updatedAt: timestamp
+      createdAt,
+      updatedAt: createdAt
     }
 
     await db.emotions.put(toPlain(item))
@@ -141,7 +143,7 @@ export const useEmotionsStore = defineStore('emotions', () => {
   async function upsertDailyEmotion(payload = {}) {
     await load()
 
-    const timestamp = now()
+    const updatedAt = timestamp()
     const date = normalizeDateKey(payload.date)
     const existing = emotions.value.find((item) => item.date === date)
 
@@ -156,8 +158,8 @@ export const useEmotionsStore = defineStore('emotions', () => {
           ? payload.note.trim()
           : existing?.note || '',
       source: payload.source || existing?.source || 'manual',
-      createdAt: existing?.createdAt || timestamp,
-      updatedAt: timestamp
+      createdAt: existing?.createdAt || updatedAt,
+      updatedAt
     }
 
     await db.emotions.put(toPlain(item))
@@ -201,7 +203,7 @@ export const useEmotionsStore = defineStore('emotions', () => {
         typeof patch.note === 'string'
           ? patch.note.trim()
           : existing.note || '',
-      updatedAt: now()
+      updatedAt: timestamp()
     }
 
     delete updated.emotion
