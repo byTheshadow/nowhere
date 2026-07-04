@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "emotions": [
+    "idle",
+    "happy",
+    "thinking",
+    "listening",
+    "caring",
+    "worried",
+    "sad",
+    "excited",
+    "sleepy",
+    "confused"
+  ],
+  "styles": {
+    "baymax": {
+      "label": "Baymax",
+      "description": "圆眼、简约、稳定守护感",
+      "kaomoji": {
+        "idle":      "(◕‿◕)",
+        "happy":     "(◕‿◕✿)",
+        "thinking":  "(⊙_⊙)",
+        "listening": "(◡‿◡)",
+        "caring":    "(っ◕‿◕)っ",
+        "worried":   "(◕︵◕)",
+        "sad":       "(╥‿╥)",
+        "excited":   "(◕ᴗ◕✿)",
+        "sleepy":    "(－_－) zzZ",
+        "confused":  "(◑○◑)"
+      }
+    },
+    "treehole": {
+      "label": "树洞",
+      "description": "极简静默，只倾听不打扰",
+      "kaomoji": {
+        "idle":      "(・_・)",
+        "happy":     "(─‿‿─)",
+        "thinking":  "(⋯_⋯)",
+        "listening": "( ｡ • ᴗ - ) ✧",
+        "caring":    "(｡•́ _ •̀｡)",
+        "worried":   "(・_・;)",
+        "sad":       "(╥_╥)",
+        "excited":   "(•‿•)",
+        "sleepy":    "(-_-) zzz",
+        "confused":  "(・・?)"
+      }
+    },
+    "sunshine": {
+      "label": "阳光小太阳",
+      "description": "活泼开朗，能量满满",
+      "kaomoji": {
+        "idle":      "(☀◡☀)",
+        "happy":     "٩(◕‿◕)۶",
+        "thinking":  "(☀_☀?)",
+        "listening": "(◕‿◕)b",
+        "caring":    "ﾍ(◕ω◕ﾍ)",
+        "worried":   "(◔◡◔;)",
+        "sad":       "(◕︵◕)",
+        "excited":   "٩(๑❛ᴗ❛๑)۶",
+        "sleepy":    "(◕ᴗ◕) zzZ",
+        "confused":  "( ･ω･)?"
+      }
+    },
+    "puppy": {
+      "label": "可爱小狗狗",
+      "description": "忠诚黏人，摇尾巴的开心鬼",
+      "kaomoji": {
+        "idle":      "૮ ・ﻌ・ ა",
+        "happy":     "૮ ˃ ⤙ ˂ ა",
+        "thinking":  "૮ ・ ﻌ ・? ა",
+        "listening": "૮ ・ﻌ・ ა ♡",
+        "caring":    "૮ ˶ᵔ ᵕ ᵔ˶ ა",
+        "worried":   "૮ ・ﻌ・; ა",
+        "sad":       "૮ ˶ㅠ ﻌ ㅠ˶ ა",
+        "excited":   "૮ ˃ ⤙ ˂ ა ✧",
+        "sleepy":    "૮ －ﻌ－ ა zzZ",
+        "confused":  "૮ ・ ｪ ・? ა"
+      }
+    },
+    "kitty": {
+      "label": "傲娇小猫猫",
+      "description": "口是心非的高冷傲娇",
+      "kaomoji": {
+        "idle":      "(=•ω•=)",
+        "happy":     "(=✧ω✧=) ♪",
+        "thinking":  "(=・ω・=;)",
+        "listening": "(=￣ω￣=)…",
+        "caring":    "(=ↀᆺↀ=) 哼",
+        "worried":   "(=•ω•=;)",
+        "sad":       "(=；ω；=)",
+        "excited":   "(=ↀωↀ=)✧",
+        "sleepy":    "(=－ω－=) zz",
+        "confused":  "(=・ｪ・=?)"
+      }
+    },
+    "turtle": {
+      "label": "稳重小乌龟",
+      "description": "慢条斯理，稳如泰山",
+      "kaomoji": {
+        "idle":      "「(・_・)」",
+        "happy":     "「(◕‿◕)」",
+        "thinking":  "「(¬_¬)」",
+        "listening": "「(◡‿◡)」",
+        "caring":    "「(´｡• ω •｡`)」",
+        "worried":   "「(´･_･`)」",
+        "sad":       "「(╥﹏╥)」",
+        "excited":   "「(★‿★)」",
+        "sleepy":    "「(￣o￣)」zZ",
+        "confused":  "「(・・?)」"
+      }
+    }
+  }
+}
