@@ -59,3 +59,143 @@ body {
 }
 
 a { color: inherit; }
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.05s ease;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+select,
+textarea,
+input[type='text'],
+input[type='password'],
+input[type='number'],
+input[type='email'],
+input[type='search'],
+input[type='url'],
+input[type='tel'],
+input[type='date'] {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+/* 通用按钮体系 */
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.98);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-icon:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  color: #d94b4b;
+  border-color: rgba(217, 75, 75, 0.28);
+}
+
+.btn-danger:hover {
+  border-color: #d94b4b;
+  background: rgba(217, 75, 75, 0.08);
+}
+
+.btn-warn {
+  color: #b7791f;
+  border-color: rgba(183, 121, 31, 0.28);
+}
+
+.btn-warn:hover {
+  border-color: #b7791f;
+  background: rgba(183, 121, 31, 0.08);
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  text-decoration: none;
+  background: var(--bg-secondary);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.link-btn:hover {
+  border-color: var(--accent);
+}
