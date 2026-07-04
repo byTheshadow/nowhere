@@ -2,7 +2,18 @@
   <div class="home">
     <header class="topbar">
       <button class="icon-btn" @click="sidebarOpen = true" title="对话列表">☰</button>
-      <div class="brand">nowhere</div>
+      <div class="brand-wrap">
+        <div class="brand">nowhere</div>
+        <button
+          v-if="personas.activePersona"
+          class="persona-chip"
+          @click="pickerOpen = true"
+          :title="`切换人设（当前：${personas.activePersona.name}）`"
+        >
+          <span class="chip-avatar">{{ personas.activePersona.avatar }}</span>
+          <span class="chip-name">{{ personas.activePersona.name }}</span>
+        </button>
+      </div>
       <div class="actions">
         <button class="icon-btn" @click="onNewChat" title="新对话">+</button>
         <router-link to="/settings" class="icon-btn">⚙</router-link>
@@ -10,9 +21,15 @@
     </header>
 
     <main class="stage" ref="stageRef">
-      <div class="kaomoji" :class="{ thinking: chat.isStreaming }">
-        {{ kaomoji }}
-      </div>
+      <Transition name="kaomoji-swap" mode="out-in">
+        <div
+          class="kaomoji"
+          :class="{ thinking: chat.isStreaming }"
+          :key="kaomoji"
+        >
+          {{ kaomoji }}
+        </div>
+      </Transition>
 
       <p class="greeting" v-if="!hasContent">{{ greeting }}</p>
 
@@ -62,6 +79,11 @@
       @select="onSelectConv"
       @new="onNewChat"
     />
+
+    <PersonaPicker
+      v-if="pickerOpen"
+      @close="pickerOpen = false"
+    />
   </div>
 </template>
 
@@ -70,19 +92,27 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { useAIStore } from '../stores/ai'
 import { useConversationsStore } from '../stores/conversations'
+import { usePersonasStore } from '../stores/personas'
+import { logger } from '../services/logger'
 import ChatSidebar from '../components/ChatSidebar.vue'
+import PersonaPicker from '../components/PersonaPicker.vue'
 
 const chat = useChatStore()
 const ai = useAIStore()
 const convStore = useConversationsStore()
+const personas = usePersonasStore()
 
 const input = ref('')
 const error = ref('')
 const stageRef = ref(null)
 const textareaRef = ref(null)
 const sidebarOpen = ref(false)
+const pickerOpen = ref(false)
 
-const kaomoji = ref('(˶ˆᗜˆ˵)')
+// 颜文字库：从 public/knowledge/kaomoji-library.json 拉取
+const kaomojiLib = ref(null)
+
+const DEFAULT_KAOMOJI = '(˶ˆᗜˆ˵)'
 
 const hasContent = computed(
   () => chat.messages.length > 0 || chat.isStreaming
@@ -95,9 +125,47 @@ const greeting = computed(() => {
   return '你好，我在这里。'
 })
 
+/**
+ * 颜文字联动：根据当前人设风格 + 当前情绪查表
+ * 优先级：thinking(流式中) → currentEmotion → idle → avatar → 默认
+ */
+const kaomoji = computed(() => {
+  const persona = personas.activePersona
+  const styleKey = persona?.kaomojiStyle
+  const styleKaomoji = kaomojiLib.value?.styles?.[styleKey]?.kaomoji
+
+  // 流式中优先显示 thinking
+  const emotion = chat.isStreaming ? 'thinking' : (chat.currentEmotion || 'idle')
+
+  if (styleKaomoji) {
+    return (
+      styleKaomoji[emotion] ||
+      styleKaomoji.idle ||
+      persona?.avatar ||
+      DEFAULT_KAOMOJI
+    )
+  }
+  return persona?.avatar || DEFAULT_KAOMOJI
+})
+
+async function loadKaomojiLib() {
+  try {
+    const url = `${import.meta.env.BASE_URL}knowledge/kaomoji-library.json`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    kaomojiLib.value = await res.json()
+  } catch (e) {
+    logger.error('[Home] 加载颜文字库失败', { message: e.message })
+  }
+}
+
 onMounted(async () => {
-  await ai.load()
-  await convStore.loadCurrentId()
+  await Promise.all([
+    ai.load(),
+    convStore.loadCurrentId(),
+    personas.isLoaded ? Promise.resolve() : personas.load(),
+    loadKaomojiLib()
+  ])
   await chat.loadMessages()
   scrollToBottom()
 })
@@ -166,11 +234,53 @@ async function onNewChat() {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 20px;
   flex-shrink: 0;
+  gap: 8px;
+}
+
+.brand-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 .brand {
   font-size: 14px; letter-spacing: 2px;
   color: var(--text-secondary);
 }
+
+.persona-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 100%;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.persona-chip:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+.chip-avatar {
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
 .actions { display: flex; gap: 4px; }
 
 .icon-btn {
@@ -179,6 +289,7 @@ async function onNewChat() {
   color: var(--text-secondary); background: transparent; border: none;
   text-decoration: none; font-size: 18px; cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
+  flex-shrink: 0;
 }
 .icon-btn:hover {
   background: var(--border); color: var(--text-primary);
@@ -201,9 +312,25 @@ async function onNewChat() {
   user-select: none;
   margin: 24px 0 16px;
   flex-shrink: 0;
+  white-space: nowrap;
+  text-align: center;
 }
 .kaomoji.thinking {
   animation: thinking 1.2s ease-in-out infinite;
+}
+
+/* 颜文字切换过渡（Transition 组件） */
+.kaomoji-swap-enter-active,
+.kaomoji-swap-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.kaomoji-swap-enter-from {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.95);
+}
+.kaomoji-swap-leave-to {
+  opacity: 0;
+  transform: translateY(4px) scale(0.95);
 }
 
 .greeting {
